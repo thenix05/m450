@@ -72,4 +72,17 @@ public class BankkontoTests
         // Assert
         Assert.IsType<ArgumentOutOfRangeException>(exception);
     }
+
+    [Fact]
+    public void NeuesKonto_MitZinssaetzen_MerktSichAktivUndPassivZins()
+    {
+        // Arrange
+
+        // Act
+        var konto = new Bankkonto(aktivZins: 3.6m, passivZins: 7.2m);
+
+        // Assert
+        Assert.Equal(3.6m, konto.AktivZins);
+        Assert.Equal(7.2m, konto.PassivZins);
+    }
 }
