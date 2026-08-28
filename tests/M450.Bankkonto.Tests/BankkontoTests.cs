@@ -131,4 +131,42 @@ public class BankkontoTests
         Assert.Equal(1_003m, konto.Guthaben);
         Assert.Equal(0m, konto.AufgelaufenerZins);
     }
+
+    /// <summary>
+    /// Validiert den in der Aufgabenstellung vorgegebenen Jahresablauf:
+    /// Aktivzins 3.6 %, Passivzins 7.2 %, Kontoeroeffnung am 1. Maerz mit
+    /// Buchungen bis zum Kontoabschluss am 31. Dezember. Die Bank rechnet
+    /// mit Monaten zu 30 Tagen (360-Tage-Jahr).
+    /// </summary>
+    [Fact]
+    public void Kontoabschluss_NachJahresablaufMitVorgegebenenBuchungen_VerbuchtGesamtzins()
+    {
+        // Arrange
+        var konto = new Bankkonto(aktivZins: 3.6m, passivZins: 7.2m);
+
+        // Act
+        // 1. Maerz: Konto eroeffnen und CHF 1'000 einzahlen.
+        konto.Einzahlen(1_000m);
+
+        // 1. Juli (120 Tage spaeter): Zins auf CHF 1'000 gutschreiben, dann CHF 1'000 einzahlen.
+        konto.SchreibeZinsGut(120);
+        konto.Einzahlen(1_000m);
+
+        // 1. August (30 Tage spaeter): Zins auf CHF 2'000 gutschreiben, dann CHF 3'000 beziehen.
+        konto.SchreibeZinsGut(30);
+        konto.Beziehen(3_000m);
+
+        // 1. Oktober (60 Tage spaeter): Zins auf CHF -1'000 gutschreiben, dann CHF 2'000 einzahlen.
+        konto.SchreibeZinsGut(60);
+        konto.Einzahlen(2_000m);
+
+        // 31. Dezember (90 Tage spaeter): Zins auf CHF 1'000 gutschreiben und Konto abschliessen.
+        konto.SchreibeZinsGut(90);
+        konto.SchliesseKontoAb();
+
+        // Assert
+        // Buchungssaldo CHF 1'000 + Gesamtzins CHF 15 = CHF 1'015.
+        Assert.Equal(1_015m, konto.Guthaben);
+        Assert.Equal(0m, konto.AufgelaufenerZins);
+    }
 }
