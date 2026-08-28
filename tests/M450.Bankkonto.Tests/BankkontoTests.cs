@@ -43,4 +43,18 @@ public class BankkontoTests
         // Assert
         Assert.IsType<ArgumentOutOfRangeException>(exception);
     }
+
+    [Fact]
+    public void Beziehen_MitBetragUeberGuthaben_ErlaubtUeberziehung()
+    {
+        // Arrange
+        var konto = new Bankkonto();
+        konto.Einzahlen(100m);
+
+        // Act
+        konto.Beziehen(150m);
+
+        // Assert
+        Assert.Equal(-50m, konto.Guthaben);
+    }
 }

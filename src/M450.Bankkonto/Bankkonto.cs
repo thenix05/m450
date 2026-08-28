@@ -13,4 +13,9 @@ public class Bankkonto
 
         Guthaben += betrag;
     }
+
+    public void Beziehen(decimal betrag)
+    {
+        Guthaben -= betrag;
+    }
 }
