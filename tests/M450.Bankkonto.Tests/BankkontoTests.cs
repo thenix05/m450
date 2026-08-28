@@ -85,4 +85,19 @@ public class BankkontoTests
         Assert.Equal(3.6m, konto.AktivZins);
         Assert.Equal(7.2m, konto.PassivZins);
     }
+
+    [Fact]
+    public void SchreibeZinsGut_BeiPositivemGuthaben_VerwendetAktivZins()
+    {
+        // Arrange
+        var konto = new Bankkonto(aktivZins: 3.6m, passivZins: 7.2m);
+        konto.Einzahlen(1_000m);
+
+        // Act
+        konto.SchreibeZinsGut(120);
+
+        // Assert
+        Assert.Equal(12m, konto.AufgelaufenerZins);
+        Assert.Equal(1_000m, konto.Guthaben);
+    }
 }

@@ -14,6 +14,16 @@ public class Bankkonto
 
     public decimal PassivZins { get; }
 
+    public decimal AufgelaufenerZins { get; private set; }
+
+    private const int BankjahrInTagen = 360;
+
+    public void SchreibeZinsGut(int anzTage)
+    {
+        var zinsSatz = Guthaben >= 0m ? AktivZins : PassivZins;
+        AufgelaufenerZins += Guthaben * zinsSatz * anzTage / (100m * BankjahrInTagen);
+    }
+
     public void Einzahlen(decimal betrag)
     {
         StellePositivenBetragSicher(betrag);
