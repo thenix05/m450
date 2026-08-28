@@ -15,4 +15,17 @@ public class BankkontoTests
         // Assert
         Assert.Equal(0m, konto.Guthaben);
     }
+
+    [Fact]
+    public void Einzahlen_MitPositivemBetrag_ErhoehtGuthaben()
+    {
+        // Arrange
+        var konto = new Bankkonto();
+
+        // Act
+        konto.Einzahlen(100m);
+
+        // Assert
+        Assert.Equal(100m, konto.Guthaben);
+    }
 }
