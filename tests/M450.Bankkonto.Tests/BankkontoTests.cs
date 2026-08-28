@@ -115,4 +115,20 @@ public class BankkontoTests
         Assert.Equal(-6m, konto.AufgelaufenerZins);
         Assert.Equal(-1_000m, konto.Guthaben);
     }
+
+    [Fact]
+    public void SchliesseKontoAb_VerbuchtAufgelaufenenZinsUndSetztIhnZurueck()
+    {
+        // Arrange
+        var konto = new Bankkonto(aktivZins: 3.6m, passivZins: 7.2m);
+        konto.Einzahlen(1_000m);
+        konto.SchreibeZinsGut(30);
+
+        // Act
+        konto.SchliesseKontoAb();
+
+        // Assert
+        Assert.Equal(1_003m, konto.Guthaben);
+        Assert.Equal(0m, konto.AufgelaufenerZins);
+    }
 }

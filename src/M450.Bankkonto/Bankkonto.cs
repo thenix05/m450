@@ -24,6 +24,12 @@ public class Bankkonto
         AufgelaufenerZins += Guthaben * zinsSatz * anzTage / (100m * BankjahrInTagen);
     }
 
+    public void SchliesseKontoAb()
+    {
+        Guthaben += AufgelaufenerZins;
+        AufgelaufenerZins = 0m;
+    }
+
     public void Einzahlen(decimal betrag)
     {
         StellePositivenBetragSicher(betrag);
