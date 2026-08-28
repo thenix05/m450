@@ -6,6 +6,11 @@ public class Bankkonto
 
     public void Einzahlen(decimal betrag)
     {
+        if (betrag <= 0m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(betrag), "Der Betrag muss groesser als null sein.");
+        }
+
         Guthaben += betrag;
     }
 }
