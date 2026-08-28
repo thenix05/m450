@@ -57,4 +57,19 @@ public class BankkontoTests
         // Assert
         Assert.Equal(-50m, konto.Guthaben);
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Beziehen_MitNichtPositivemBetrag_WirftException(int betrag)
+    {
+        // Arrange
+        var konto = new Bankkonto();
+
+        // Act
+        var exception = Record.Exception(() => konto.Beziehen(betrag));
+
+        // Assert
+        Assert.IsType<ArgumentOutOfRangeException>(exception);
+    }
 }
