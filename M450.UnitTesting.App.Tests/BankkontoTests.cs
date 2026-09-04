@@ -120,6 +120,78 @@ public sealed class BankkontoTests
     }
 
     [Fact]
+    public void Konstruktor_OhneStatusAngabe_SetztStandardAlsStatus()
+    {
+        // Arrange & Act
+        var konto = new Bankkonto(1.5m, 5m);
+
+        // Assert
+        Assert.Equal(KontoStatus.Standard, konto.Status);
+    }
+
+    [Fact]
+    public void Konstruktor_MitVipStatus_SetztStatusAufVip()
+    {
+        // Arrange & Act
+        var konto = new Bankkonto(1.5m, 5m, status: KontoStatus.VIP);
+
+        // Assert
+        Assert.Equal(KontoStatus.VIP, konto.Status);
+    }
+
+    // Äquivalenzklassen für das Guthaben (g) laut Aufgabenstellung:
+    //   g < 0                          -> PassivZins, unabhängig vom Status
+    //   0 <= g < 10'000                -> AktivZins
+    //   10'000 <= g < 50'000           -> AktivZins + 0.5%
+    //   50'000 <= g < 100'000, Standard -> AktivZins + 0.75%
+    //   50'000 <= g < 100'000, VIP      -> AktivZins + 1.5%
+    // Für g >= 100'000 gibt die Aufgabenstellung keine eigene Klasse vor;
+    // hier gilt weiterhin der Zuschlag der höchsten Stufe.
+    // Getestet werden jeweils die untere und die (um 1 Rappen unterschrittene)
+    // obere Grenze jeder Klasse.
+    [Theory]
+    [InlineData(0, KontoStatus.Standard, 2)]
+    [InlineData(9999.99, KontoStatus.Standard, 2)]
+    [InlineData(10000, KontoStatus.Standard, 2.5)]
+    [InlineData(49999.99, KontoStatus.Standard, 2.5)]
+    [InlineData(50000, KontoStatus.Standard, 2.75)]
+    [InlineData(99999.99, KontoStatus.Standard, 2.75)]
+    [InlineData(100000, KontoStatus.Standard, 2.75)]
+    [InlineData(50000, KontoStatus.VIP, 3.5)]
+    [InlineData(99999.99, KontoStatus.VIP, 3.5)]
+    [InlineData(100000, KontoStatus.VIP, 3.5)]
+    public void SchreibeZinsGut_BeiGuthabenKlassenUndStatus_WendetErwartetenZinssatzAn(
+        decimal guthaben, KontoStatus status, decimal erwarteterZinssatz)
+    {
+        // Arrange
+        var konto = NeuesKonto(aktivZins: 2m, passivZins: 5m, startGuthaben: guthaben, status: status);
+        var erwarteterZins = guthaben * erwarteterZinssatz / 100m;
+
+        // Act
+        konto.SchreibeZinsGut(360);
+
+        // Assert
+        Assert.Equal(erwarteterZins, konto.AufgelaufenerZins);
+    }
+
+    [Theory]
+    [InlineData(KontoStatus.Standard)]
+    [InlineData(KontoStatus.VIP)]
+    public void SchreibeZinsGut_BeiNegativemGuthabenGrenzwert_VerwendetPassivZinsUnabhaengigVomStatus(
+        KontoStatus status)
+    {
+        // Arrange
+        var konto = NeuesKonto(aktivZins: 2m, passivZins: 5m, startGuthaben: -0.01m, status: status);
+        var erwarteterZins = -0.01m * 5m / 100m;
+
+        // Act
+        konto.SchreibeZinsGut(360);
+
+        // Assert
+        Assert.Equal(erwarteterZins, konto.AufgelaufenerZins);
+    }
+
+    [Fact]
     public void SchreibeZinsGut_Mehrmals_BerechnetKeinenZinseszins()
     {
         // Arrange
@@ -214,8 +286,9 @@ public sealed class BankkontoTests
     private static Bankkonto NeuesKonto(
         decimal aktivZins = 1.5m,
         decimal passivZins = 5m,
-        decimal startGuthaben = 0m)
+        decimal startGuthaben = 0m,
+        KontoStatus status = KontoStatus.Standard)
     {
-        return new Bankkonto(aktivZins, passivZins, startGuthaben);
+        return new Bankkonto(aktivZins, passivZins, startGuthaben, status);
     }
 }
