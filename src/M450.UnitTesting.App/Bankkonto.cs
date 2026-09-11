@@ -63,10 +63,6 @@ public class Bankkonto
         return AufgelaufenerZins;
     }
 
-    // Äquivalenzklassen für das Guthaben: [<0), [0, 10'000), [10'000, 50'000),
-    // [50'000, 100'000) und [>=100'000). Ab 50'000 unterscheidet sich der
-    // Zinszuschlag zusätzlich nach Status. Für Guthaben >= 100'000 gilt mangels
-    // eigener Vorgabe weiterhin der Zuschlag der höchsten Stufe.
     private decimal ErmittleZinssatz()
     {
         if (Guthaben < 0)

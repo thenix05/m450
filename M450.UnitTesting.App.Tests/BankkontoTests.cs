@@ -139,16 +139,6 @@ public sealed class BankkontoTests
         Assert.Equal(KontoStatus.VIP, konto.Status);
     }
 
-    // Äquivalenzklassen für das Guthaben (g) laut Aufgabenstellung:
-    //   g < 0                          -> PassivZins, unabhängig vom Status
-    //   0 <= g < 10'000                -> AktivZins
-    //   10'000 <= g < 50'000           -> AktivZins + 0.5%
-    //   50'000 <= g < 100'000, Standard -> AktivZins + 0.75%
-    //   50'000 <= g < 100'000, VIP      -> AktivZins + 1.5%
-    // Für g >= 100'000 gibt die Aufgabenstellung keine eigene Klasse vor;
-    // hier gilt weiterhin der Zuschlag der höchsten Stufe.
-    // Getestet werden jeweils die untere und die (um 1 Rappen unterschrittene)
-    // obere Grenze jeder Klasse.
     [Theory]
     [InlineData(0, KontoStatus.Standard, 2)]
     [InlineData(9999.99, KontoStatus.Standard, 2)]
