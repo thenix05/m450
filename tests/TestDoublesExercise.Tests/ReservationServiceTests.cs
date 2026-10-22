@@ -1,98 +1,265 @@
+using Moq;
+using TestDoublesExercise.Tests.Doubles;
+
 namespace TestDoublesExercise.Tests;
 
+// Antworten zu den Aufgaben 1, 3 und 5 sowie zur Fortgeschrittenen-Aufgabe: siehe test-doubles/ANTWORTEN.md
 public sealed class ReservationServiceTests
 {
-    // Entfernt Skip jeweils erst, wenn ihr den Test implementiert habt.
-    // Die Beispiele für Stub, Spy und Moq stehen in TestDoubleExamples.cs.
+    private const string Email = "anna@example.com";
+    private const string EventCode = "KONZERT-01";
 
-    [Fact(Skip = "TODO: eigenen Verfügbarkeits-Stub schreiben")]
+    // ---------------------------------------------------------------
+    // Aufgabe 1: Nur die Schnittstelle ist bekannt (eigener Stub)
+    // ---------------------------------------------------------------
+
+    [Fact]
     public void Reserve_WithEnoughSeats_ReturnsTrue()
     {
-        // Arrange: Stub mit 3 freien Plätzen, Repository mit erfolgreichem Speichern,
-        //          eigener Sender-Spy und ReservationService.
-        // Act:     2 Plätze reservieren.
-        // Assert:  Ergebnis ist true.
-        throw new NotImplementedException();
+        // Arrange
+        var availability = new SeatAvailabilityStub(EventCode, availableSeats: 3);
+        var service = new ReservationService(availability, new AlwaysSuccessfulRepository(), new NoOpConfirmationSender());
+
+        // Act
+        var result = service.Reserve(Email, EventCode, 2);
+
+        // Assert
+        Assert.True(result);
     }
 
-    [Fact(Skip = "TODO: fehlende Verfügbarkeit prüfen")]
-    public void Reserve_WithTooFewSeats_DoesNotSaveOrSend()
+    [Fact]
+    public void Reserve_WithTooFewSeats_ReturnsFalse()
     {
-        // Arrange: Stub mit 1 freiem Platz und Doubles für Repository und Sender.
-        // Act:     2 Plätze reservieren.
-        // Assert:  Ergebnis ist false; weder Speichern noch Senden wurde aufgerufen.
-        throw new NotImplementedException();
+        // Arrange
+        var availability = new SeatAvailabilityStub(EventCode, availableSeats: 1);
+        var service = new ReservationService(availability, new AlwaysSuccessfulRepository(), new NoOpConfirmationSender());
+
+        // Act
+        var result = service.Reserve(Email, EventCode, 2);
+
+        // Assert
+        Assert.False(result);
     }
 
-    [Fact(Skip = "TODO: Grenzfall testen")]
+    [Fact]
     public void Reserve_WithExactlyEnoughSeats_Succeeds()
     {
-        // Arrange: Stub mit genau 2 freien Plätzen.
-        // Act:     2 Plätze reservieren.
-        // Assert:  Ergebnis ist true.
-        throw new NotImplementedException();
+        // Arrange
+        var availability = new SeatAvailabilityStub(EventCode, availableSeats: 2);
+        var service = new ReservationService(availability, new AlwaysSuccessfulRepository(), new NoOpConfirmationSender());
+
+        // Act
+        var result = service.Reserve(Email, EventCode, 2);
+
+        // Assert
+        Assert.True(result);
     }
 
-    [Fact(Skip = "TODO: Platzanzahl 0 testen")]
+    // ---------------------------------------------------------------
+    // Aufgabe 2: Grenzfälle und Isolation
+    // Fehlende Aufrufe werden mit Spies sichtbar gemacht, die jeden Aufruf aufzeichnen.
+    // ---------------------------------------------------------------
+
+    [Fact]
     public void Reserve_WithZeroSeats_ThrowsBeforeCallingDependencies()
     {
-        // Arrange: Doubles, deren Aufrufe sich prüfen lassen.
-        // Act:     0 Plätze reservieren.
-        // Assert:  ArgumentOutOfRangeException; keine Abhängigkeit wurde aufgerufen.
-        throw new NotImplementedException();
+        // Arrange
+        var availability = new SeatAvailabilitySpy(EventCode, availableSeats: 10);
+        var repository = new RepositorySpy();
+        var sender = new ConfirmationSenderSpy();
+        var service = new ReservationService(availability, repository, sender);
+
+        // Act
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() => service.Reserve(Email, EventCode, 0));
+
+        // Assert
+        Assert.Equal("seatCount", exception.ParamName);
+        Assert.Empty(availability.RequestedEventCodes);
+        Assert.Empty(repository.SavedReservations);
+        Assert.Empty(sender.SentReservations);
     }
 
-    [Fact(Skip = "TODO: negative Platzanzahl testen")]
+    [Fact]
     public void Reserve_WithNegativeSeats_ThrowsBeforeCallingDependencies()
     {
-        // Arrange: Doubles, deren Aufrufe sich prüfen lassen.
-        // Act:     -1 Plätze reservieren.
-        // Assert:  ArgumentOutOfRangeException; keine Abhängigkeit wurde aufgerufen.
-        throw new NotImplementedException();
+        // Arrange
+        var availability = new SeatAvailabilitySpy(EventCode, availableSeats: 10);
+        var repository = new RepositorySpy();
+        var sender = new ConfirmationSenderSpy();
+        var service = new ReservationService(availability, repository, sender);
+
+        // Act
+        var exception = Assert.Throws<ArgumentOutOfRangeException>(() => service.Reserve(Email, EventCode, -1));
+
+        // Assert
+        Assert.Equal("seatCount", exception.ParamName);
+        Assert.Empty(availability.RequestedEventCodes);
+        Assert.Empty(repository.SavedReservations);
+        Assert.Empty(sender.SentReservations);
     }
 
-    [Fact(Skip = "TODO: leeren Veranstaltungscode testen")]
+    [Fact]
     public void Reserve_WithEmptyEventCode_ThrowsBeforeCallingDependencies()
     {
-        // Arrange: Doubles, deren Aufrufe sich prüfen lassen.
-        // Act:     Mit leerem Veranstaltungscode reservieren.
-        // Assert:  ArgumentException; keine Abhängigkeit wurde aufgerufen.
-        throw new NotImplementedException();
+        // Arrange
+        var availability = new SeatAvailabilitySpy(string.Empty, availableSeats: 10);
+        var repository = new RepositorySpy();
+        var sender = new ConfirmationSenderSpy();
+        var service = new ReservationService(availability, repository, sender);
+
+        // Act
+        var exception = Assert.Throws<ArgumentException>(() => service.Reserve(Email, string.Empty, 2));
+
+        // Assert
+        Assert.Equal("eventCode", exception.ParamName);
+        Assert.Empty(availability.RequestedEventCodes);
+        Assert.Empty(repository.SavedReservations);
+        Assert.Empty(sender.SentReservations);
     }
 
-    [Fact(Skip = "TODO: E-Mail-Adresse aus Leerzeichen testen")]
-    public void Reserve_WithWhitespaceEmail_ThrowsBeforeCallingDependencies()
+    // ---------------------------------------------------------------
+    // Aufgabe 3: Spy von Hand (ConfirmationSenderSpy)
+    // ---------------------------------------------------------------
+
+    [Fact]
+    public void Reserve_AfterSuccessfulSave_SendsExactlyOneConfirmation()
     {
-        // Arrange: Handgeschriebene Doubles oder Moq gezielt auswählen.
-        // Act:     Mit einer E-Mail-Adresse aus Leerzeichen reservieren.
-        // Assert:  ArgumentException; keine Abhängigkeit wurde aufgerufen.
-        throw new NotImplementedException();
+        // Arrange
+        var sender = new ConfirmationSenderSpy();
+        var service = new ReservationService(new SeatAvailabilityStub(EventCode, 3), new RepositorySpy(saveResult: true), sender);
+
+        // Act
+        var result = service.Reserve(Email, EventCode, 2);
+
+        // Assert
+        Assert.True(result);
+        var confirmation = Assert.Single(sender.SentReservations);
+        Assert.Equal(Email, confirmation.CustomerEmail);
+        Assert.Equal(EventCode, confirmation.EventCode);
+        Assert.Equal(2, confirmation.SeatCount);
     }
 
-    [Fact(Skip = "TODO: fehlgeschlagenes Speichern testen")]
+    [Fact]
+    public void Reserve_WithTooFewSeats_DoesNotSaveOrSend()
+    {
+        // Arrange
+        var repository = new RepositorySpy();
+        var sender = new ConfirmationSenderSpy();
+        var service = new ReservationService(new SeatAvailabilityStub(EventCode, 1), repository, sender);
+
+        // Act
+        var result = service.Reserve(Email, EventCode, 2);
+
+        // Assert
+        Assert.False(result);
+        Assert.Empty(repository.SavedReservations);
+        Assert.Empty(sender.SentReservations);
+    }
+
+    [Fact]
     public void Reserve_WhenSavingFails_DoesNotSendConfirmation()
     {
-        // Arrange: Stub mit genügend Plätzen, Repository liefert false, eigener Spy.
-        // Act:     Reservierung versuchen.
-        // Assert:  Ergebnis ist false und der Spy hat keinen Aufruf aufgezeichnet.
-        throw new NotImplementedException();
+        // Arrange
+        var repository = new RepositorySpy(saveResult: false);
+        var sender = new ConfirmationSenderSpy();
+        var service = new ReservationService(new SeatAvailabilityStub(EventCode, 3), repository, sender);
+
+        // Act
+        var result = service.Reserve(Email, EventCode, 2);
+
+        // Assert
+        Assert.False(result);
+        Assert.Single(repository.SavedReservations);
+        Assert.Empty(sender.SentReservations);
     }
 
-    [Fact(Skip = "TODO: Moq für fehlenden Speicherversuch verwenden")]
+    // ---------------------------------------------------------------
+    // Aufgabe 4: Moq für das Repository
+    // ---------------------------------------------------------------
+
+    [Fact]
+    public void Reserve_WithEnoughSeats_SavesCorrectReservationOnce()
+    {
+        // Arrange
+        var repository = new Mock<IReservationRepository>();
+        repository.Setup(r => r.TrySave(It.IsAny<Reservation>())).Returns(true);
+        var sender = new ConfirmationSenderSpy();
+        var service = new ReservationService(new SeatAvailabilityStub(EventCode, 3), repository.Object, sender);
+
+        // Act
+        var result = service.Reserve(Email, EventCode, 2);
+
+        // Assert
+        Assert.True(result);
+        repository.Verify(r => r.TrySave(It.Is<Reservation>(res =>
+            res.CustomerEmail == Email &&
+            res.EventCode == EventCode &&
+            res.SeatCount == 2)), Times.Once());
+        Assert.Equal(new Reservation(Email, EventCode, 2), Assert.Single(sender.SentReservations));
+    }
+
+    [Fact]
+    public void Reserve_WhenMockedSaveFails_ReturnsFalseAndSendsNothing()
+    {
+        // Arrange
+        var repository = new Mock<IReservationRepository>();
+        repository.Setup(r => r.TrySave(It.IsAny<Reservation>())).Returns(false);
+        var sender = new ConfirmationSenderSpy();
+        var service = new ReservationService(new SeatAvailabilityStub(EventCode, 3), repository.Object, sender);
+
+        // Act
+        var result = service.Reserve(Email, EventCode, 2);
+
+        // Assert
+        Assert.False(result);
+        repository.Verify(r => r.TrySave(It.Is<Reservation>(res =>
+            res.CustomerEmail == Email &&
+            res.EventCode == EventCode &&
+            res.SeatCount == 2)), Times.Once());
+        Assert.Empty(sender.SentReservations);
+    }
+
+    [Fact]
     public void Reserve_WithTooFewSeats_DoesNotCallRepository()
     {
-        // Arrange: Stub mit zu wenigen Plätzen und Mock<IReservationRepository>.
-        // Act:     Reservierung versuchen.
-        // Assert:  Verify(..., Times.Never()) für TrySave.
-        throw new NotImplementedException();
+        // Arrange
+        var repository = new Mock<IReservationRepository>();
+        repository.Setup(r => r.TrySave(It.IsAny<Reservation>())).Returns(true);
+        var sender = new ConfirmationSenderSpy();
+        var service = new ReservationService(new SeatAvailabilityStub(EventCode, 1), repository.Object, sender);
+
+        // Act
+        var result = service.Reserve(Email, EventCode, 2);
+
+        // Assert
+        Assert.False(result);
+        repository.Verify(r => r.TrySave(It.IsAny<Reservation>()), Times.Never());
+        Assert.Empty(sender.SentReservations);
     }
 
-    [Fact(Skip = "Fortgeschrittene: ReserveBatch zuerst implementieren")]
-    public void ReserveBatch_WhenCombinedSeatsExceedCapacity_DoesNotSaveOrSend()
+    // ---------------------------------------------------------------
+    // Aufgabe 5: Handgeschrieben oder Moq? (Begründung in ANTWORTEN.md)
+    // Verfügbarkeit + Repository: Moq (Strict, ohne Setup) – jeder Aufruf würde sofort scheitern.
+    // Sender: eigener Spy – bereits vorhanden und gut lesbar.
+    // ---------------------------------------------------------------
+
+    [Fact]
+    public void Reserve_WithWhitespaceEmail_ThrowsBeforeCallingDependencies()
     {
-        // Arrange: Zwei Reservierungen für dieselbe Veranstaltung, die einzeln passen.
-        // Act:     Nach Implementierung des Batch-Verfahrens beide zusammen reservieren.
-        // Assert:  Ergebnis ist false; kein Batch-Speichern und keine Bestätigung.
-        throw new NotImplementedException();
+        // Arrange
+        var availability = new Mock<ISeatAvailability>(MockBehavior.Strict);
+        var repository = new Mock<IReservationRepository>(MockBehavior.Strict);
+        var sender = new ConfirmationSenderSpy();
+        var service = new ReservationService(availability.Object, repository.Object, sender);
+
+        // Act
+        var exception = Assert.Throws<ArgumentException>(() => service.Reserve("   ", EventCode, 2));
+
+        // Assert
+        Assert.Equal("customerEmail", exception.ParamName);
+        availability.VerifyNoOtherCalls();
+        repository.Verify(r => r.TrySave(It.IsAny<Reservation>()), Times.Never());
+        repository.VerifyNoOtherCalls();
+        Assert.Empty(sender.SentReservations);
     }
 }
